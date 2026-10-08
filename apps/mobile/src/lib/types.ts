@@ -1,0 +1,10 @@
+export type Role = 'hr' | 'department' | 'driver';
+export type User = { _id: string; name: string; email: string; role: Role; phone: string; active: boolean; departmentName?: string; availability?: string; vehicleType?: string; vehiclePlate?: string; capacity?: number; licenseNumber?: string; licenseExpiry?: string; licenseFile?: string; photo?: string; notes?: string };
+export type Trip = { _id: string; title: string; department: User; driver?: User; pickup: string; destination: string; stops: string; startAt: string; endAt: string; estimatedKm: number; passengers: number; vehicleType: string; contactName: string; contactPhone: string; notes: string; status: string; startOdometer?: number; endOdometer?: number; actualKm?: number; completionNotes?: string; decisionNote?: string; feedback?: { rating?: number; comment?: string }; history: { status: string; at: string; note?: string }[] };
+export type Summary = { driverId: string; name: string; vehicle: string; plate: string; trips: number; kilometres: number; rating: number | null; feedbackCount: number; locations: string };
+export type Report = { month?: string; generatedAt: string; summary: Summary[]; trips: { id: string; title: string; driver: string; actualKm: number; feedback: string }[] };
+export const vehicles = ['Car', 'Van', 'Tuk', 'Lorry', 'Bus', 'Motorcycle', 'Other'];
+export const roleNames = { hr: 'HR operations', department: 'Sub-department', driver: 'Driver workspace' };
+export const dateText = (date: string) => new Date(date).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+export const localDay = (date = new Date()) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+export const monthStart = () => localDay(new Date(new Date().getFullYear(), new Date().getMonth(), 1));

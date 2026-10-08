@@ -1,0 +1,14 @@
+import React, { useCallback, useState } from 'react';
+import { api, download } from '../lib/api';
+import { Report, monthStart, localDay } from '../lib/types';
+import { Page, Card, Heading, Body, Field, Button, Notice, Loading, Stats, useLoad, message } from '../components/ui';
+export default function Reports() {
+  const [from,setFrom] = useState(monthStart()); const [to,setTo] = useState(localDay()); const [report,setReport] = useState<Report | null>(null); const [error,setError] = useState(''); const [busy,setBusy] = useState(false);
+  const {data,loading,error:loadError,refresh} = useLoad(useCallback(() => api<Report[]>('/reports/monthly'),[]));
+  const query = `from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`;
+  async function run(fn:()=>Promise<unknown>) {setBusy(true);setError('');try{await fn();}catch(e){setError(message(e));}finally{setBusy(false);}}
+  return <Page title="The bigger picture" subtitle="Clear records. Better transport decisions." loading={loading} refresh={() => void refresh()}><Notice text={error || loadError} error/><Card><Heading>Custom date range</Heading><Body>Completed trips are grouped by completion date in the organisation’s timezone. Choose any period up to 10 years.</Body><Field label="From · YYYY-MM-DD" value={from} onChangeText={v => {setFrom(v);setReport(null);}}/><Field label="To · YYYY-MM-DD (inclusive)" value={to} onChangeText={v => {setTo(v);setReport(null);}}/><Button title="Preview report" disabled={busy} onPress={() => void run(async () => setReport(await api<Report>('/reports/custom?'+query)))}/><Button secondary title="↓ Export Excel workbook" disabled={busy} onPress={() => void run(() => download('/reports/custom?'+query+'&format=xlsx','hr-transport-report.xlsx'))}/></Card>
+    {report && <><Heading>Report preview</Heading>{report.summary.map(d => <Card key={d.driverId}><Heading>{d.name}</Heading><Stats values={[[ 'Actual km',d.kilometres],['Trips',d.trips],['Rating / 5',d.rating ?? '—']]}/><Body>{d.locations || 'No completed trips in this period.'}</Body></Card>)}</>}
+    <Heading>Monthly archive</Heading><Body>Created automatically after month-end while the backend is running; missed months are created when it restarts. Archived feedback is a snapshot. Custom reports include the latest feedback.</Body><Loading show={loading && !data}/>{data?.map(r => <Card key={r.month}><Heading>{r.month}</Heading><Body>{r.summary.reduce((sum,d) => sum+d.trips,0)} completed trips · {r.summary.reduce((sum,d) => sum+d.kilometres,0).toFixed(1)} km</Body><Button secondary disabled={busy} title="Download monthly Excel" onPress={() => void run(() => download('/reports/monthly/'+r.month,`hr-transport-${r.month}.xlsx`))}/></Card>)}{data?.length === 0 && <Notice text="Your first monthly report will appear after the month closes."/>}
+  </Page>;
+}
